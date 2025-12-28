@@ -1,0 +1,155 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 220 33% 98%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 240 85% 60%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 240 85% 75%;
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 0 75% 70%;
+    --accent-foreground: 222 47% 11%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 240 85% 60%;
+
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 240 10% 4%;
+    --foreground: 210 40% 98%;
+
+    --card: 240 10% 4%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 240 10% 4%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 240 85% 60%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 240 85% 75%;
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 0 75% 70%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 85% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans overflow-x-hidden;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  input, textarea, select, button {
+    font-family: inherit;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3);
+  }
+
+  /* Hide scrollbar in mobile */
+  @media (max-width: 640px) {
+    ::-webkit-scrollbar {
+      width: 0px;
+      height: 0px;
+      background: transparent;
+    }
+  }
+}
+
+@layer components {
+  .paymall-container {
+    @apply mx-auto max-w-md w-full px-4;
+  }
+
+  .btn-primary {
+    @apply bg-paymall-primary text-white font-medium py-3 px-6 rounded-lg transition-all hover:bg-opacity-90 active:scale-95 flex items-center justify-center;
+  }
+
+  .btn-outline {
+    @apply border-2 border-paymall-primary text-paymall-primary bg-transparent font-medium py-3 px-6 rounded-lg transition-all hover:bg-paymall-primary hover:bg-opacity-5 active:scale-95 flex items-center justify-center;
+  }
+
+  .btn-secondary {
+    @apply bg-paymall-secondary text-white font-medium py-3 px-6 rounded-lg transition-all hover:bg-opacity-90 active:scale-95 flex items-center justify-center;
+  }
+
+  .input-field {
+    @apply w-full bg-white border border-gray-200 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-paymall-primary focus:outline-none transition-all;
+  }
+
+  .card-shadow {
+    @apply shadow-soft rounded-xl;
+  }
+
+  .animated-bg {
+    @apply bg-gradient-to-br from-paymall-primary to-paymall-secondary;
+    background-size: 200% 200%;
+    animation: gradientBG 15s ease infinite;
+  }
+
+  @keyframes gradientBG {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+}
