@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, Dispatch, SetStateAction } from "react";
+import { useState, useRef, useEffect, type Dispatch, type SetStateAction } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BrowserMultiFormatReader } from "@zxing/browser";
@@ -61,9 +61,9 @@ export function BarcodeScanner({ onScan,setManualEntry }: BarcodeScannerProps) {
     if (!videoRef.current || !videoRef.current.srcObject) return;
 
     const stream = videoRef.current.srcObject as MediaStream | null;
-    const tracks = stream.getTracks();
+    const tracks = stream?.getTracks();
 
-    tracks.forEach((track) => {
+    tracks?.forEach((track) => {
       track.stop();
     });
 

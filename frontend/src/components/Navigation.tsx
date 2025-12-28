@@ -1,4 +1,3 @@
-
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, CreditCard, ScanBarcode, ClipboardList, ShoppingCart } from 'lucide-react';
 

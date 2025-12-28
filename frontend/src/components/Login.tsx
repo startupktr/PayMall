@@ -1,4 +1,3 @@
-import axios from 'axios';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -35,8 +34,6 @@ const Login = () => {
     
     login(email, password);
 
-    // Simulate login/signup success
-    // In a real app, this would call your backend authentication API
     toast({
       title: isSignup ? "Account created" : "Welcome back!",
       description: isSignup 
