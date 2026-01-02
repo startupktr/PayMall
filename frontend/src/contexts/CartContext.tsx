@@ -1,169 +1,129 @@
-import { createContext, useState, useContext, useEffect } from 'react';
-import axios from 'axios';
-import { useAuth } from './AuthContext';
+import { createContext, useContext, useState, ReactNode } from "react";
+import api from "@/api/axios";
 
-const CartContext = createContext<any | undefined>(undefined);
-const BASE_URL = import.meta.env.VITE_BASE_URL;
+interface CartState {
+  items: any[];
+  subtotal: number;
+  tax: number;
+  total: number;
+  count: number;
+}
 
-export const useCart = () => useContext(CartContext);
+interface CartContextType {
+  cart: CartState | null;
+  isLoaded: boolean;
+  loadCart: () => Promise<void>;
+  addToCart: (productId: number, qty?: number) => Promise<void>;
+  updateItem: (itemId: number, qty: number) => Promise<void>;
+  removeItem: (itemId: number) => Promise<void>;
+  clearCart: () => void;
+  checkout: (paymentMethod: string) => Promise<{
+    success: boolean;
+    order?: any;
+    error?: any;
+  }>;
+}
 
-export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated } = useAuth();
-  const [cartItems, setCartItems] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  
-  const [cartSummary, setCartSummary] = useState({
-    subtotal: 0,
-    tax: 0,
-    total: 0,
-    itemCount: 0
-  });
+const CartContext = createContext<CartContextType | null>(null);
 
-  // Fetch cart when authenticated
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchCart();
-    } else {
-      setCartItems([]);
-      setCartSummary({
+export const useCart = () => {
+  const ctx = useContext(CartContext);
+  if (!ctx) throw new Error("useCart must be used inside CartProvider");
+  return ctx;
+};
+
+export const CartProvider = ({ children }: { children: ReactNode }) => {
+  const [cart, setCart] = useState<CartState | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  // ✅ Load cart ONLY when explicitly called
+  const loadCart = async () => {
+    if (isLoaded) return; // prevent duplicate calls
+
+    const res = await api.get("/orders/cart/");
+    setCart({
+      items: res.data.items,
+      subtotal: Number(res.data.subtotal),
+      tax: Number(res.data.tax_amount),
+      total: Number(res.data.total_amount),
+      count: res.data.items.length,
+    });
+    setIsLoaded(true);
+  };
+
+  // 🔥 Optimistic add
+  const addToCart = async (productId: number, qty = 1) => {
+    await api.post("/orders/cart/add/", { product_id: productId, quantity: qty });
+    await refreshCart();
+  };
+
+  const updateItem = async (itemId: number, qty: number) => {
+    await api.put(`/orders/cart/items/${itemId}/`, { quantity: qty });
+    await refreshCart();
+  };
+
+  const removeItem = async (itemId: number) => {
+    await api.delete(`/orders/cart/items/${itemId}/`);
+    await refreshCart();
+  };
+
+  const refreshCart = async () => {
+    const res = await api.get("/orders/cart/");
+    setCart({
+      items: res.data.items,
+      subtotal: Number(res.data.subtotal),
+      tax: Number(res.data.tax_amount),
+      total: Number(res.data.total_amount),
+      count: res.data.items.length,
+    });
+  };
+
+  const clearCart = () => {
+    setCart(null);
+    setIsLoaded(false);
+  };
+
+  const checkout = async (paymentMethod: string) => {
+    try {
+      const res = await api.post("/orders/orders/create/", {
+        payment_method: paymentMethod,
+      });
+
+      // ✅ clear cart after successful order
+      setCart({
+        items: [],
         subtotal: 0,
         tax: 0,
         total: 0,
-        itemCount: 0
+        count: 0,
       });
-    }
-  }, [isAuthenticated]);
-  
-  // Fetch cart items from API
-  const fetchCart = async () => {
-    setLoading(true);
-    try {
-      const response = await axios.get(`${BASE_URL}/orders/cart/`);
-      setCartItems(response.data.items);
-      
-      // Update cart summary
-      setCartSummary({
-        subtotal: response.data.subtotal,
-        tax: response.data.tax_amount,
-        total: response.data.total_amount,
-        itemCount: response.data.items.length
-      });
-      
-      setLoading(false);
-    } catch (err) {
-      setError(err.response?.data || { message: 'Failed to fetch cart' });
-      setLoading(false);
-    }
-  };
-  
-  // Add item to cart
-  const addToCart = async (productId:number, quantity = 1) => {
-    if (!isAuthenticated) {
-      setError({ message: 'Please login to add items to cart' });
-      return false;
-    }
-    
-    setLoading(true);
-    try {
-      await axios.post(`${BASE_URL}/orders/cart/add/`, { product_id: productId, quantity });
-      await fetchCart(); // Refresh cart after adding
-      setLoading(false);
-      return true;
-    } catch (err) {
-      setError(err.response?.data || { message: 'Failed to add item to cart' });
-      setLoading(false);
-      return false;
-    }
-  };
-  
-  // Update cart item quantity
-  const updateCartItem = async (itemId:number, quantity:number) => {
-    setLoading(true);
-    try {
-      await axios.put(`${BASE_URL}/orders/cart/items/${itemId}/`, { quantity });
-      await fetchCart(); // Refresh cart after updating
-      setLoading(false);
-      return true;
-    } catch (err) {
-      setError(err.response?.data || { message: 'Failed to update cart item' });
-      setLoading(false);
-      return false;
-    }
-  };
-  
-  // Remove item from cart
-  const removeFromCart = async (itemId:number) => {
-    setLoading(true);
-    try {
-      await axios.delete(`${BASE_URL}/orders/cart/items/${itemId}/`);
-      await fetchCart(); // Refresh cart after removing
-      setLoading(false);
-      return true;
-    } catch (err) {
-      setError(err.response?.data || { message: 'Failed to remove item from cart' });
-      setLoading(false);
-      return false;
-    }
-  };
-  
-  // Clear entire cart
-  const clearCart = async () => {
-    setLoading(true);
-    try {
-      await axios.delete(`${BASE_URL}/orders/cart/`);
-      setCartItems([]);
-      setCartSummary({
-        subtotal: 0,
-        tax: 0,
-        total: 0,
-        itemCount: 0
-      });
-      setLoading(false);
-      return true;
-    } catch (err) {
-      setError(err.response?.data || { message: 'Failed to clear cart' });
-      setLoading(false);
-      return false;
-    }
-  };
-  
-  // Create order from cart
-  const checkout = async (paymentMethod:any) => {
-    setLoading(true);
-    try {
-      const response = await axios.post(`${BASE_URL}/orders/orders/create/`, { payment_method: paymentMethod });
-      
-      // Clear cart after successful checkout
-      setCartItems([]);
-      setCartSummary({
-        subtotal: 0,
-        tax: 0,
-        total: 0,
-        itemCount: 0
-      });
-      
-      setLoading(false);
-      return { success: true, order: response.data };
-    } catch (err) {
-      setError(err.response?.data || { message: 'Checkout failed' });
-      setLoading(false);
-      return { success: false, error: err.response?.data };
+
+      setIsLoaded(false); // allow fresh cart later
+
+      return { success: true, order: res.data };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.response?.data,
+      };
     }
   };
 
-  const value = {
-    cartItems,
-    cartSummary,
-    loading,
-    error,
-    addToCart,
-    updateCartItem,
-    removeFromCart,
-    clearCart,
-    checkout,
-    refreshCart: fetchCart
-  };
 
-  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
+  return (
+    <CartContext.Provider
+      value={{
+        cart,
+        isLoaded,
+        loadCart,
+        addToCart,
+        updateItem,
+        removeItem,
+        clearCart,
+        checkout,
+      }}
+    >
+      {children}
+    </CartContext.Provider>
+  );
 };

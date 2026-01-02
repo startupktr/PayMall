@@ -3,8 +3,10 @@ from django.db import models
 class Mall(models.Model):
     """Model to represent different malls listed in the application"""
     name = models.CharField(max_length=100)
-    location = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
+    location = models.CharField(max_length=255)
+    latitude = models.FloatField()
+    longitude = models.FloatField()
     image = models.ImageField(upload_to='mall_images/', blank=True, null=True)
     is_active = models.BooleanField(default=True)
     

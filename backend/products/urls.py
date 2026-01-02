@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import (
-    MallListView,
+    NearbyMallView,
     CategoryListView,
     ProductListView,
     ProductDetailView,
@@ -8,7 +8,7 @@ from .views import (
 )
 
 urlpatterns = [
-    path('malls/', MallListView.as_view(), name='mall_list'),
+    path('malls/nearby/', NearbyMallView.as_view(), name='mall_list'),
     path('categories/', CategoryListView.as_view(), name='category_list'),
     path('products/', ProductListView.as_view(), name='product_list'),
     path('products/<int:pk>/', ProductDetailView.as_view(), name='product_detail'),

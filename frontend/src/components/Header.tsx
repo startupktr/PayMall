@@ -2,6 +2,8 @@ import { useNavigate } from "react-router-dom";
 import { ChevronLeft, Bell } from "lucide-react";
 import Location from "@/components/ui/location";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCart } from "@/contexts/CartContext";
+import { useMall } from "@/contexts/MallProvider";
 
 type HeaderProps = {
   title?: string;
@@ -22,6 +24,8 @@ const Header = ({
 }: HeaderProps) => {
   const navigate = useNavigate();
   const { logout } = useAuth();
+  const { clearCart } = useCart();
+  const { selectedMall } = useMall();
 
   return (
     <div className="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-sm shadow-sm">
@@ -42,6 +46,12 @@ const Header = ({
               <h1 className="font-semibold text-base text-gray-900 truncate">
                 {title}
               </h1>
+            )}
+
+            {selectedMall && (
+              <div className="text-xs text-gray-500">
+                📍 {selectedMall.name}
+              </div>
             )}
 
             {showLocation && (
@@ -67,7 +77,7 @@ const Header = ({
           {showProfile && (
             <button
               // onClick={() => navigate("/profile")}
-              onClick={() => {logout(); navigate("/login")}}
+              onClick={() => {logout(); clearCart();}}
               className="w-12 h-12 flex items-center justify-center rounded-full border border-gray-300 overflow-hidden"
             >
               {profileImageUrl ? (

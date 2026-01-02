@@ -5,6 +5,9 @@ import Navigation from '@/components/Navigation';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { Search, Menu } from 'lucide-react';
+import { getUserLocation } from "@/lib/location";
+import { useMall } from "@/contexts/MallProvider";
+import api from "@/api/axios";
 
 // Two separate banner arrays
 const banners1 = [
@@ -65,7 +68,39 @@ const BannerSlider = ({ banners }) => {
 const HomePage = () => {
   const navigate = useNavigate();
   const [showAllMalls, setShowAllMalls] = useState(false);
-  const visibleMalls = showAllMalls ? malls : malls.slice(0, 3);
+  const [nearbyMalls, setNearbyMalls] = useState<any[]>([]);
+  const { selectedMall, setSelectedMall } = useMall();
+  
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const cached = localStorage.getItem("coords");
+
+        if (cached) {
+          const coords = JSON.parse(cached);
+          const res = await api.post("/products/malls/nearby/", coords);
+          setNearbyMalls(res.data);
+          return; // stop here, no permission popup
+        }
+
+        const coords = await getUserLocation();
+
+        localStorage.setItem("coords", JSON.stringify(coords));
+
+        // Fetch nearby malls
+        const res = await api.post("/products/malls/nearby/", coords);
+        setNearbyMalls(res.data);
+      } catch (error) {
+        console.error("Failed to fetch nearby malls", error);
+        setNearbyMalls([]);
+      }
+    };
+
+    if (!selectedMall) {
+      init();
+    }
+  }, [selectedMall]);
+
 
   return (
     <div className="pb-20 min-h-screen bg-paymall-light">
@@ -88,17 +123,38 @@ const HomePage = () => {
         <section className="mt-4">
           <h2 className="text-lg font-semibold mb-2">Malls Nearby</h2>
           <div className="grid grid-cols-3 gap-4">
-            {visibleMalls.map((mall) => (
-              <div key={mall.id} className="bg-white p-2 rounded-xl shadow-sm text-center">
-                <img src={mall.image} alt={mall.name} className="w-full h-20 object-cover rounded-md mb-2" />
-                <p className="text-sm font-medium">{mall.name}</p>
-              </div>
-            ))}
+            {/* Slice(0, 3) shows only the first 3 items if showAllMalls is false */}
+            {nearbyMalls
+              .slice(0, showAllMalls ? nearbyMalls.length : 3)
+              .map((mall: any) => (
+                <button key={mall.id} className="bg-white p-2 rounded-xl shadow-sm text-center"
+                onClick={() => setSelectedMall(mall)}
+                >
+                  <img src={mall.image} alt={mall.name} className="w-full h-20 object-cover rounded-md mb-2" />
+                  <p className="text-sm font-medium">{mall.name}</p>
+                  <p className="text-sm text-gray-500">{mall.distance} km away</p>
+                </button>
+              ))}
           </div>
-          <button onClick={() => setShowAllMalls(!showAllMalls)} className="mt-4 w-full text-center text-sm font-medium text-paymall-primary">
-            {showAllMalls ? "Show Less" : "View All"}
-          </button>
+          
+          {/* Only show the button if there are more than 3 malls */}
+          {nearbyMalls.length > 3 && (
+            <button 
+              onClick={() => setShowAllMalls(!showAllMalls)} 
+              className="mt-4 w-full text-center text-sm font-medium text-paymall-primary"
+            >
+              {showAllMalls ? "Show Less" : "View All"}
+            </button>
+          )}
         </section>
+
+        {nearbyMalls.length === 0 && (
+          <div
+            className="p-4 bg-white rounded-xl shadow-soft cursor-pointer"
+          >
+            <p className="font-medium text-centre">No Malls found nearby</p>
+          </div>
+        )}
 
         {/* Recent Scans */}
         <motion.div 

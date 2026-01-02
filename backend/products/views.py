@@ -3,12 +3,22 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import Mall, Category, Product
 from .serializers import MallSerializer, CategorySerializer, ProductSerializer, ProductDetailSerializer
+import math
 
-class MallListView(generics.ListAPIView):
-    """View to list all malls"""
-    queryset = Mall.objects.filter(is_active=True)
-    serializer_class = MallSerializer
-    permission_classes = [permissions.AllowAny]
+def haversine(lat1, lon1, lat2, lon2):
+    R = 6371
+    d_lat = math.radians(lat2 - lat1)
+    d_lon = math.radians(lon2 - lon1)
+    a = math.sin(d_lat/2)**2 + math.cos(math.radians(lat1)) * \
+        math.cos(math.radians(lat2)) * math.sin(d_lon/2)**2
+    return R * (2 * math.atan2(math.sqrt(a), math.sqrt(1 - a)))
+
+
+# class MallListView(generics.ListAPIView):
+#     """View to list all malls"""
+#     queryset = Mall.objects.filter(is_active=True)
+#     serializer_class = MallSerializer
+#     permission_classes = [permissions.AllowAny]
 
 class CategoryListView(generics.ListAPIView):
     """View to list all categories"""
@@ -61,3 +71,22 @@ class ProductBarcodeView(APIView):
                 {"error": "Product with this barcode not found or not available"}, 
                 status=status.HTTP_404_NOT_FOUND
             )
+
+class NearbyMallView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        lat = request.data.get("latitude")
+        lng = request.data.get("longitude")
+
+        malls = []
+        for mall in Mall.objects.filter(is_active=True):
+            dist = haversine(lat, lng, mall.latitude, mall.longitude)
+            if dist <= 3:
+                malls.append({
+                    "id": mall.id,
+                    "name": mall.name,
+                    "distance": round(dist, 2)
+                })
+
+        return Response(sorted(malls, key=lambda x: x["distance"]))
