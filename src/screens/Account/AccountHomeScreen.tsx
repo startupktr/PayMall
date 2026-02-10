@@ -57,12 +57,12 @@ export default function AccountHomeScreen() {
   };
 
   const User = {
-    name: user?.full_name ?? "",
-    phoneMasked: user?.phone_number
-      ? `+91 ••••• ${user.phone_number.slice(-4)}`
+    name: user.data?.full_name ?? "",
+    phoneMasked: user.data?.phone_number
+      ? `+91 ••••• ${user.data.phone_number.slice(-4)}`
       : "",
     unreadNotifications: 3,
-    profileImage: user?.avatar,
+    profileImage: user.data?.avatar,
   };
 
   const Onlogout = () => {

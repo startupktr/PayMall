@@ -14,6 +14,7 @@ import AccountStack from './AccountStack';
 import ScannerScreen from '@/screens/Scan/ScannerScreen';
 import { MainTabParamList } from '@/types/index';
 import { useCart } from '@/contexts/CartContext';
+import { createTabResetListener } from "@/navigation/tabResetHelper";
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
@@ -45,33 +46,33 @@ export default function MainNavigator() {
   ================================= */
 
   useEffect(() => {
-  const onBackPress = () => {
-    const canGoBack = navigationRef.current?.canGoBack?.();
+    const onBackPress = () => {
+      const canGoBack = navigationRef.current?.canGoBack?.();
 
-    // If cannot go back → we are at root → show exit dialog
-    if (!canGoBack) {
-      Alert.alert(
-        'Exit App',
-        'Are you sure you want to exit?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Exit', onPress: () => BackHandler.exitApp() },
-        ],
-        { cancelable: true }
-      );
-      return true;
-    }
+      // If cannot go back → we are at root → show exit dialog
+      if (!canGoBack) {
+        Alert.alert(
+          'Exit App',
+          'Are you sure you want to exit?',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Exit', onPress: () => BackHandler.exitApp() },
+          ],
+          { cancelable: true }
+        );
+        return true;
+      }
 
-    return false; // let navigation handle normally
-  };
+      return false; // let navigation handle normally
+    };
 
-  const sub = BackHandler.addEventListener(
-    'hardwareBackPress',
-    onBackPress
-  );
+    const sub = BackHandler.addEventListener(
+      'hardwareBackPress',
+      onBackPress
+    );
 
-  return () => sub.remove();
-}, []);
+    return () => sub.remove();
+  }, []);
 
   return (
     <Tab.Navigator
@@ -79,7 +80,7 @@ export default function MainNavigator() {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarShowLabel: true,
-
+        tabBarHideOnKeyboard: true,
         tabBarActiveTintColor: '#2563EB',
         tabBarInactiveTintColor: '#94A3B8',
 
@@ -137,12 +138,14 @@ export default function MainNavigator() {
         name="OrderTab"
         component={OrderStack}
         options={{ title: 'Orders' }}
+        listeners={createTabResetListener("OrderTab")}
       />
 
       <Tab.Screen
         name="Scan"
         component={ScannerScreen}
         options={{ title: 'Scan' }}
+        listeners={createTabResetListener("Scan")}
       />
 
       <Tab.Screen
@@ -158,12 +161,14 @@ export default function MainNavigator() {
             fontWeight: '700',
           },
         }}
+        listeners={createTabResetListener("CartTab")}
       />
 
       <Tab.Screen
         name="AccountTab"
         component={AccountStack}
         options={{ title: 'Account' }}
+        listeners={createTabResetListener("AccountTab")}
       />
     </Tab.Navigator>
   );

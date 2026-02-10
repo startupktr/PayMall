@@ -8,7 +8,6 @@ import {
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { SafeContainer } from '@/components/SafeContainer';
 import { Button } from '@/components/Button';
@@ -16,15 +15,15 @@ import { Input } from '@/components/Input';
 import { AuthHeader } from '@/components/AuthHeader';
 
 import { useTheme } from '@/contexts/ThemeContext';
-import { RootStackParamList } from '@/types/index';
-import { USER_TOKEN_KEY } from '@/constants/index';
+import { useAuth } from '@/contexts/AuthContext';
 
 type SignupScreenProps = {
-  navigation: NativeStackNavigationProp<RootStackParamList, 'Signup'>;
+  navigation: NativeStackNavigationProp<any>;
 };
 
 export const SignupScreen: React.FC<SignupScreenProps> = ({ navigation }) => {
   const { theme } = useTheme();
+  const { register } = useAuth();
 
   const [email, setEmail] = useState('');
   const [mobile, setMobile] = useState('');
@@ -53,8 +52,13 @@ export const SignupScreen: React.FC<SignupScreenProps> = ({ navigation }) => {
       confirmPassword: '',
     };
 
+    const cleanedMobile = mobile.replace(/\D/g, "");
+
     if (!mobile.trim()) {
       newErrors.mobile = 'Mobile is required';
+      valid = false;
+    } else if (cleanedMobile.length < 10) {
+      newErrors.mobile = 'Enter a valid mobile number';
       valid = false;
     }
 
@@ -74,7 +78,10 @@ export const SignupScreen: React.FC<SignupScreenProps> = ({ navigation }) => {
       valid = false;
     }
 
-    if (password !== confirmPassword) {
+    if (!confirmPassword.trim()) {
+      newErrors.confirmPassword = 'Confirm your password';
+      valid = false;
+    } else if (password !== confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
       valid = false;
     }
@@ -89,14 +96,21 @@ export const SignupScreen: React.FC<SignupScreenProps> = ({ navigation }) => {
     if (!validateForm()) return;
 
     setLoading(true);
-
+    const cleanedMobile = mobile.replace(/\D/g, '');
+    
     try {
-      // 👉 Replace with real API later
-      await AsyncStorage.setItem(USER_TOKEN_KEY, 'mock_token_12345');
+      await register(
+        cleanedMobile,
+        email.trim(),
+        password,
+        confirmPassword
+      );
 
-      navigation.replace('Main');
-    } catch {
-      Alert.alert('Signup Failed', 'Please try again later.');
+    } catch (error: any) {
+      Alert.alert(
+        'Signup Failed',
+        error?.message || 'Please try again later.'
+      );
     } finally {
       setLoading(false);
     }
@@ -118,7 +132,7 @@ export const SignupScreen: React.FC<SignupScreenProps> = ({ navigation }) => {
         extraScrollHeight={20}
       >
         <View style={[styles.container, { padding: theme.spacing.lg }]}>
-          
+
           {/* ✅ REUSABLE HEADER */}
           <AuthHeader
             title="Create Account"

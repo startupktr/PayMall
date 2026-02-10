@@ -1,21 +1,18 @@
 import React from "react";
 import {
-  KeyboardAvoidingView,
-  Platform,
   StyleSheet,
   TouchableWithoutFeedback,
   Keyboard,
   View,
-  ScrollView,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { useTheme } from "@/contexts/ThemeContext";
 
 type Props = {
   children: React.ReactNode;
   scroll?: boolean;
-  centered?: boolean; // ✅ optional vertical center
+  centered?: boolean;
 };
 
 export default function ScreenWrapper({
@@ -24,6 +21,7 @@ export default function ScreenWrapper({
   centered = false,
 }: Props) {
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
 
   const Content = scroll ? KeyboardAwareScrollView : View;
 
@@ -33,28 +31,25 @@ export default function ScreenWrapper({
         styles.safe,
         { backgroundColor: theme.colors.background },
       ]}
-      edges={["top", "bottom"]}
+      edges={["top"]}
     >
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
-      >
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <Content
-            style={styles.flex}
-            contentContainerStyle={[
-              scroll && styles.scrollContent,
-              centered && styles.centeredContent,
-            ]}
-            enableOnAndroid
-            extraScrollHeight={120}
-            keyboardShouldPersistTaps="handled"
-          >
-            {children}
-          </Content>
-        </TouchableWithoutFeedback>
-      </KeyboardAvoidingView>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <Content
+          style={styles.flex}
+          contentContainerStyle={[
+            scroll && styles.scrollContent,
+            centered && styles.centeredContent,
+            {
+              paddingBottom: insets.bottom + 20, // 👈 controlled padding
+            },
+          ]}
+          enableOnAndroid
+          extraScrollHeight={40} // 👈 reduce from 120
+          keyboardShouldPersistTaps="handled"
+        >
+          {children}
+        </Content>
+      </TouchableWithoutFeedback>
     </SafeAreaView>
   );
 }

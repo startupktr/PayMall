@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import { useRoute } from "@react-navigation/native";
 
 import { useCart } from "@/contexts/CartContext";
 import { useMall } from "@/contexts/MallContext";
@@ -22,6 +23,8 @@ import { postLoginRedirect } from "@/lib/postLoginRedirect";
 
 export default function CartScreen() {
   const navigation = useNavigation<any>();
+  const route = useRoute<any>();
+  const reviewAfterMerge = route?.params?.reviewAfterMerge;
 
   const { selectedMall } = useMall();
   const { user } = useAuth();
@@ -33,7 +36,7 @@ export default function CartScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const mallId = selectedMall?.id;
-  
+
   useFocusEffect(
     useCallback(() => {
       if (!mallId) return;
@@ -44,6 +47,18 @@ export default function CartScreen() {
   useEffect(() => {
     loadCart();
   }, [mallId]);
+
+  useEffect(() => {
+    if (route.params?.reviewAfterMerge) {
+      Alert.alert(
+        "Cart Updated",
+        "Your guest items were merged with existing items. Please review quantities before checkout."
+      );
+
+      // remove param so alert doesn’t show again
+      navigation.setParams({ reviewAfterMerge: undefined });
+    }
+  }, [route.params?.reviewAfterMerge]);
 
   const loadCart = async () => {
     setLoading(true);
@@ -80,10 +95,18 @@ export default function CartScreen() {
       return;
     }
 
-    // ✅ save intent
     await postLoginRedirect.set({
-      type: "CART_CHECKOUT",
-      payload: { mallId },
+      type: "GO_TO",
+      payload: {
+        screen: "Main",
+        params: {
+          screen: "CartTab",
+          params: {
+            screen: "Checkout",
+            params: { mall_id: mallId },
+          },
+        },
+      },
     });
 
     Alert.alert(
@@ -114,7 +137,7 @@ export default function CartScreen() {
       await askLoginForCheckout();
       return;
     }
-    
+
     // ✅ logged-in checkout
     navigation.navigate("Checkout", { mall_id: mallId });
   };
@@ -148,7 +171,7 @@ export default function CartScreen() {
       </View>
     );
   }
-  
+
   return (
     <SafeAreaView style={styles.container}>
       {/* HEADER */}

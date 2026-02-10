@@ -1,25 +1,31 @@
+import React, { useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useEffect } from "react";
-import { RootStackParamList } from "@/types/navigation"
+import { postLoginRedirect } from "@/lib/postLoginRedirect";
 
-type RootNavProp = NativeStackNavigationProp<RootStackParamList>;
-
-export default function RequireAuth({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
-  const navigation = useNavigation<RootNavProp>();
-  const route = useRoute<any>();
+export default function RequireAuth({ children }: any) {
+  const { isLoggedIn } = useAuth();
+  const navigation = useNavigation<any>();
+  const route = useRoute();
 
   useEffect(() => {
-    if (!loading && !user) {
-      navigation.navigate("Auth", {
-        redirectTo: route.name,
-        redirectParams: route.params,
+    if (!isLoggedIn) {
+      postLoginRedirect.set({
+        type: "GO_TO",
+        payload: {
+          screen: "Main",
+          params: {
+            screen: route.name,
+            params: route.params,
+          },
+        },
       });
-    }
-  }, [loading, user]);
 
-  if (!user) return null;
-  return <>{children}</>;
+      navigation.navigate("Auth");
+    }
+  }, [isLoggedIn]);
+
+  if (!isLoggedIn) return null;
+
+  return children;
 }

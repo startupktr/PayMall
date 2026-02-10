@@ -1,12 +1,10 @@
 import axios, {
   AxiosError,
-  AxiosInstance,
   AxiosRequestConfig,
   AxiosResponse,
 } from "axios";
 import * as Keychain from "react-native-keychain";
 import { authEvents } from "@/lib/authEvents";
-import { pendingRequest } from "@/lib/pendingRequest";
 
 /* ================================
    CONFIG
@@ -169,7 +167,7 @@ api.interceptors.response.use(
         const newAccessToken = res.data.access;
 
         await Keychain.setGenericPassword(
-          "access",
+          "auth",
           newAccessToken
         );
 

@@ -1,3 +1,5 @@
+import { NavigatorScreenParams } from "@react-navigation/native";
+
 export interface Mall {
   id: string;
   name: string;
@@ -33,8 +35,9 @@ export interface OnboardingSlide {
 export type RootStackParamList = {
   Splash: undefined;
   Onboarding: undefined;
-  Main: undefined;
+  Main: NavigatorScreenParams<MainTabParamList>;
   ProductDetails: undefined;
+  Profile: undefined;
 
   Auth:
     | {
@@ -46,7 +49,7 @@ export type RootStackParamList = {
 
 export type MainTabParamList = {
   HomeTab: undefined;
-  CartTab: undefined;
+  CartTab: { reviewAfterMerge?: boolean } | undefined;
   OrderTab: undefined;
   AccountTab: undefined;
   Scan: undefined;
@@ -72,4 +75,5 @@ export type CartStackParamList = {
 export type OrderStackParamList = {
   Orders: undefined;
   OrderDetails: { orderId: number };
+  Invoice: { orderId: number };
 };

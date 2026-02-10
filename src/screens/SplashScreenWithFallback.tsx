@@ -91,7 +91,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
       } else if (userToken) {
         navigation.replace('Main');
       } else {
-        navigation.replace('Login');
+        navigation.replace('Auth');
       }
     } catch (error) {
       console.error('Error checking initial route:', error);

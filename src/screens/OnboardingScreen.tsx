@@ -74,10 +74,15 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }
   const handleComplete = async () => {
     try {
       await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
-      navigation.replace('Login');
     } catch (error) {
       console.error('Error saving onboarding status:', error);
     }
+
+    // 🔥 Navigate away from onboarding
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Main' }],
+    });
   };
 
   const renderSlide = ({ item }: { item: OnboardingSlide }) => {
@@ -85,7 +90,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }
       <View style={[styles.slide, { width }]}>
         <View style={styles.slideContent}>
           <Text style={styles.emoji}>{item.image}</Text>
-          
+
           <Text
             style={[
               styles.title,
@@ -99,7 +104,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }
           >
             {item.title}
           </Text>
-          
+
           <Text
             style={[
               styles.description,
@@ -123,13 +128,13 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }
       <View style={[styles.pagination, { marginBottom: theme.spacing.xl }]}>
         {slides.map((_, index) => {
           const inputRange = [(index - 1) * width, index * width, (index + 1) * width];
-          
+
           const dotWidth = scrollX.interpolate({
             inputRange,
             outputRange: [10, 24, 10],
             extrapolate: 'clamp',
           });
-          
+
           const opacity = scrollX.interpolate({
             inputRange,
             outputRange: [0.3, 1, 0.3],
@@ -162,7 +167,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }
         {/* Skip Button */}
         <TouchableOpacity
           onPress={handleSkip}
-          style={[styles.skipButton, { padding: theme.spacing.md }]}
+          style={[styles.skipButton, { padding: theme.spacing.md, top: theme.spacing.lg }]}
         >
           <Text
             style={[
@@ -219,7 +224,6 @@ const styles = StyleSheet.create({
   },
   skipButton: {
     position: 'absolute',
-    top: 0,
     right: 0,
     zIndex: 10,
   },

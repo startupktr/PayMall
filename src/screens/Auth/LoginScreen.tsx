@@ -13,12 +13,11 @@ import ScreenWrapper from '@/components/ScreenWrapper';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { useTheme } from '@/contexts/ThemeContext';
-import { RootStackParamList } from '@/types/index';
 import { AuthHeader } from '@/components/AuthHeader';
 import { useAuth } from '@/contexts/AuthContext';
 
 type LoginScreenProps = {
-  navigation: NativeStackNavigationProp<RootStackParamList, 'Login'>;
+  navigation: NativeStackNavigationProp<any>;
 };
 
 export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
@@ -48,7 +47,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
     if (!password.trim()) {
       newErrors.password = 'Password is required';
       valid = false;
-    } 
+    }
     // else if (password.length < 6) {
     //   newErrors.password = 'Password must be at least 6 characters';
     //   valid = false;
@@ -64,7 +63,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
     setLoading(true);
     try {
       await login(email, password);
-      navigation.replace('Main');
     } catch {
       Alert.alert('Login Failed', 'Please check your credentials and try again.');
     } finally {

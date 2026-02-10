@@ -27,13 +27,13 @@ const App: React.FC = () => {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <ThemeProvider>
-          <MallProvider>
-            <CartProvider>
-              <AuthProvider>
+          <AuthProvider>
+            <MallProvider>
+              <CartProvider>
                 <AppContent />
-              </AuthProvider>
-            </CartProvider>
-          </MallProvider>
+              </CartProvider>
+            </MallProvider>
+          </AuthProvider>
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

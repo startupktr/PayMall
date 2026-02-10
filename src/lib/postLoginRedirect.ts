@@ -1,11 +1,16 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import type { RootStackParamList } from "@/types";
 
 const KEY = "post_login_redirect_v1";
 
-export type PostLoginRedirect = {
-  type: string;
-  payload: {};
-};
+export type PostLoginRedirect =
+  | {
+    type: "GO_TO";
+    payload: {
+      screen: keyof RootStackParamList;
+      params?: any;
+    };
+  }
 
 export const postLoginRedirect = {
   async set(payload: PostLoginRedirect) {

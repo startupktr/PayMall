@@ -139,7 +139,7 @@ export default function OrderDetailsScreen({
   return (
     <ScreenWrapper scroll={false}>
       <View style={styles.screenContainer}>
-        
+
         {/* 🔥 STICKY HEADER */}
         <View
           style={[
@@ -283,7 +283,7 @@ export default function OrderDetailsScreen({
               />
             </View>
 
-            {order.status === "PAID" && (
+            {/* {order.status === "PAID" && (
               <Button
                 title="Download Invoice"
                 onPress={() =>
@@ -292,6 +292,19 @@ export default function OrderDetailsScreen({
                   })
                 }
               />
+            )} */}
+
+            {order.status === "PAID" && (
+              <View style={{ gap: 12, marginTop: 10 }}>
+                <Button
+                  title="View Invoice"
+                  variant="outline"
+                  onPress={() => navigation.navigate("Invoice", { orderId: order.id })}
+                />
+                <Text style={{ textAlign: 'center', color: colors.textSecondary, fontSize: 12 }}>
+                  Digital receipt is ready
+                </Text>
+              </View>
             )}
           </View>
         </ScrollView>

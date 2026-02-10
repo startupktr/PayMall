@@ -7,9 +7,9 @@ import React, {
   useCallback,
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as Keychain from "react-native-keychain";
 import api from "@/lib/axios";
 import { useMall } from "@/contexts/MallContext";
+import { useAuth } from "./AuthContext";
 
 /* ================= TYPES ================= */
 
@@ -44,6 +44,12 @@ type ApiEnvelope<T> = {
   errors: any;
 };
 
+type MergeResult = {
+  cart: Cart;
+  had_existing_items: boolean;
+  merged_count: number;
+};
+
 type CartContextType = {
   cart: Cart | null;
   count: number;
@@ -57,7 +63,7 @@ type CartContextType = {
   updateItem: (cartItemId: number, qty: number) => Promise<void>;
   removeItem: (cartItemId: number) => Promise<void>;
   clearCart: () => Promise<void>;
-  mergeGuestCartIntoServer: () => Promise<void>;
+  mergeGuestCartIntoServer: () => Promise<MergeResult | null>;
 };
 
 const CartContext = createContext<CartContextType | null>(null);
@@ -106,8 +112,10 @@ export const CartProvider = ({
   const { selectedMall } = useMall();
   const mallId = selectedMall?.id;
 
+  const { isLoggedIn } = useAuth();
+  const isGuest = !isLoggedIn;
+
   const [cart, setCart] = useState<Cart | null>(null);
-  const [isGuest, setIsGuest] = useState<boolean>(true);
 
   /* ================= CART COUNT ================= */
 
@@ -116,27 +124,49 @@ export const CartProvider = ({
     [cart]
   );
 
-  /* ================= AUTH MODE ================= */
+  /* ================= FETCH CART ================= */
 
-  const detectAuthMode = useCallback(async () => {
-    const access = await Keychain.getGenericPassword();
-    setIsGuest(!access);
-  }, []);
-
-  useEffect(() => {
-    detectAuthMode();
-  }, []);
-
-  useEffect(() => {
+  const fetchCart = useCallback(async () => {
     if (!mallId) {
       setCart(null);
       return;
     }
 
-    detectAuthMode().finally(() => {
-      fetchCart();
-    });
-  }, [mallId]);
+    try {
+      if (isGuest) {
+        const local = await getGuestCart();
+        setCart(local);
+        return;
+      }
+
+      const res = await api.get("cart/", {
+        params: { mall_id: mallId },
+        _silentAuth: true,
+      });
+
+      const envelope = res.data as ApiEnvelope<Cart>;
+      setCart(envelope.success ? envelope.data : null);
+    } catch {
+      setCart(null);
+    }
+  }, [mallId, isGuest]);
+
+  /* ================= AUTH MODE ================= */
+
+  useEffect(() => {
+    if (!mallId) return;
+
+    const syncCart = async () => {
+      if (isLoggedIn) {
+        await mergeGuestCartIntoServer();
+      }
+
+      await fetchCart();
+    };
+
+    syncCart();
+
+  }, [mallId, isLoggedIn, fetchCart]);
 
   /* ================= GUEST STORAGE ================= */
 
@@ -158,37 +188,6 @@ export const CartProvider = ({
       );
     }
   };
-
-  /* ================= FETCH CART ================= */
-
-  const fetchCart = useCallback(async () => {
-    if (!mallId) {
-      setCart(null);
-      return;
-    }
-
-    try {
-      const access = await Keychain.getGenericPassword();
-      const guest = !access;
-      setIsGuest(guest);
-
-      if (guest) {
-        const local = await getGuestCart();
-        setCart(local);
-        return;
-      }
-
-      const res = await api.get("cart/", {
-        params: { mall_id: mallId },
-        _silentAuth: true,
-      });
-
-      const envelope = res.data as ApiEnvelope<Cart>;
-      setCart(envelope.success ? envelope.data : null);
-    } catch {
-      setCart(null);
-    }
-  }, [mallId]);
 
   /* ================= ADD TO CART ================= */
 
@@ -262,16 +261,16 @@ export const CartProvider = ({
         qty <= 0
           ? c.items.filter((x) => x.id !== id)
           : c.items.map((x) =>
-              x.id === id
-                ? {
-                    ...x,
-                    quantity: qty,
-                    total_price: (
-                      toNumber(x.product.price) * qty
-                    ).toFixed(2),
-                  }
-                : x
-            );
+            x.id === id
+              ? {
+                ...x,
+                quantity: qty,
+                total_price: (
+                  toNumber(x.product.price) * qty
+                ).toFixed(2),
+              }
+              : x
+          );
 
       if (!items.length) {
         setCart(null);
@@ -320,11 +319,11 @@ export const CartProvider = ({
 
   /* ================= MERGE ================= */
 
-  const mergeGuestCartIntoServer = async () => {
-    if (!mallId) return;
+  const mergeGuestCartIntoServer = async (): Promise<MergeResult | null> => {
+    if (!mallId) return null;
 
     const local = await getGuestCart();
-    if (!local?.items?.length) return;
+    if (!local?.items?.length) return null;
 
     const payload = {
       mall_id: mallId,
@@ -336,8 +335,12 @@ export const CartProvider = ({
 
     const res = await api.post("cart/merge-guest/", payload);
 
+    const result = res.data.data;
+
     await AsyncStorage.removeItem(guestKey(mallId));
-    setCart(res.data.data);
+    setCart(result.cart);
+
+    return result;
   };
 
   return (

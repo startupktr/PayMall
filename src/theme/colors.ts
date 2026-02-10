@@ -6,7 +6,7 @@ export const lightColors = {
   secondaryDark: '#DB2777',
   secondaryLight: '#F472B6',
   
-  background: '#FFFFFF',
+  background: '#F1F5F9',
   surface: '#F9FAFB',
   card: '#FFFFFF',
   

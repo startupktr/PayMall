@@ -7,12 +7,9 @@ import React, {
 import * as Keychain from "react-native-keychain";
 
 import api from "@/lib/axios";
-import { useCart } from "@/contexts/CartContext";
 import { postLoginRedirect } from "@/lib/postLoginRedirect";
-import {
-  safeNavigate,
-  waitForNavigationReady,
-} from "@/navigation/navigationRef";
+import { navigationRef } from "@/navigation/navigationRef";
+import { authEvents } from "@/lib/authEvents";
 
 /* ================= TYPES ================= */
 
@@ -25,7 +22,7 @@ type AuthContextType = {
 
   login: (email: string, password: string) => Promise<User>;
   register: (
-    phone_number: number,
+    phone_number: string,
     email: string,
     password: string,
     password2: string
@@ -48,11 +45,16 @@ export const AuthProvider = ({
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const { mergeGuestCartIntoServer, fetchCart } =
-    useCart();
-
   useEffect(() => {
     restoreSession();
+    const unsub = authEvents.onAuthRequired(async () => {
+      await Keychain.resetGenericPassword();
+      await Keychain.resetInternetCredentials({ server: "refresh" });
+      setUser(null);
+      authEvents.unlock();
+    });
+
+    return unsub;
   }, []);
 
   /* ================= RESTORE SESSION ================= */
@@ -73,6 +75,7 @@ export const AuthProvider = ({
       setUser(me?.data ?? me);
     } catch {
       await Keychain.resetGenericPassword();
+      await Keychain.resetInternetCredentials({ server: "refresh" });
       setUser(null);
     } finally {
       setLoading(false);
@@ -93,10 +96,10 @@ export const AuthProvider = ({
   /* ================= LOGIN ================= */
 
   const login = async (email: string, password: string) => {
-    const res: any = await api.post(
-      "accounts/login/",
-      { email, password }
-    );
+    const res: any = await api.post("accounts/login/", {
+      email,
+      password,
+    });
 
     if (!res.data.success || !res.data.data) {
       throw new Error(res.data.message || "Login failed");
@@ -104,32 +107,32 @@ export const AuthProvider = ({
 
     const { access, refresh, user } = res.data.data;
 
-    if (!access || !refresh) {
-      throw new Error("Invalid token response from server");
-    }
-    await Keychain.setGenericPassword(
-      "auth",
-      access
-    );
-
-    await Keychain.setInternetCredentials(
-      "refresh",
-      "auth",
-      refresh
-    );
+    await Keychain.setGenericPassword("auth", access);
+    await Keychain.setInternetCredentials("refresh", "auth", refresh);
 
     setUser(user);
 
-    // merge cart if needed
-    try {
-      const redirect = await postLoginRedirect.get();
-      if (redirect?.type === "CART_CHECKOUT") {
-        await mergeGuestCartIntoServer();
-      }
-    } catch { }
+    const redirect = await postLoginRedirect.get();
 
-    await waitForNavigationReady(2000);
-    safeNavigate("Main");
+    // 🔥 Close Auth Modal First
+    if (navigationRef.current?.canGoBack()) {
+      navigationRef.current.goBack();
+    }
+
+    setTimeout(async () => {
+      if (redirect?.type === "GO_TO") {
+        navigationRef.navigate(
+          redirect.payload.screen,
+          redirect.payload.params
+        );
+        await postLoginRedirect.clear();
+      } else {
+        navigationRef.reset({
+          index: 0,
+          routes: [{ name: "Main" }],
+        });
+      }
+    }, 120);
 
     return user;
   };
@@ -137,7 +140,7 @@ export const AuthProvider = ({
   /* ================= REGISTER ================= */
 
   const register = async (
-    phone_number: number,
+    phone_number: string,
     email: string,
     password: string,
     password2: string
@@ -152,31 +155,36 @@ export const AuthProvider = ({
       }
     );
 
-    await Keychain.setGenericPassword(
-      "auth",
-      res.data.access
-    );
+    const { access, refresh, user } = res.data;
 
-    await Keychain.setInternetCredentials(
-      "refresh",
-      "auth",
-      res.data.refresh
-    );
+    await Keychain.setGenericPassword("auth", access);
+    await Keychain.setInternetCredentials("refresh", "auth", refresh);
 
-    setUser(res.data.user);
+    setUser(user);
 
-    try {
-      const redirect = await postLoginRedirect.get();
-      if (redirect?.type === "CART_CHECKOUT") {
-        await mergeGuestCartIntoServer();
-        await fetchCart();
+    const redirect = await postLoginRedirect.get();
+
+    // 🔥 Close modal first (important)
+    if (navigationRef.current?.canGoBack()) {
+      navigationRef.current.goBack();
+    }
+
+    setTimeout(async () => {
+      if (redirect?.type === "GO_TO") {
+        navigationRef.navigate(
+          redirect.payload.screen,
+          redirect.payload.params
+        );
+        await postLoginRedirect.clear();
+      } else {
+        navigationRef.reset({
+          index: 0,
+          routes: [{ name: "Main" }],
+        });
       }
-    } catch { }
+    }, 120);
 
-    await waitForNavigationReady(2000);
-    safeNavigate("Main");
-
-    return res.data.user;
+    return user;
   };
 
   /* ================= LOGOUT ================= */
@@ -185,25 +193,20 @@ export const AuthProvider = ({
     try {
       const refreshCreds = await Keychain.getInternetCredentials("refresh");
 
-      if (refreshCreds && typeof refreshCreds === "object") {
+      if (refreshCreds) {
         try {
           await api.post("accounts/logout/", {
             refresh: refreshCreds.password,
           });
-        } catch {
-          // ignore server logout failure
-        }
+        } catch { }
       }
     } finally {
       await Keychain.resetGenericPassword();
       await Keychain.resetInternetCredentials({ server: "refresh" });
       setUser(null);
-
-      await waitForNavigationReady(2000);
-      safeNavigate("Main");
+      await postLoginRedirect.clear();
     }
   };
-
 
   return (
     <AuthContext.Provider

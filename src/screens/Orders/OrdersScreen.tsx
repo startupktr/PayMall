@@ -341,7 +341,7 @@ function OptionModal({ visible, title, options, onSelect, onClose, theme }: any)
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1 },
+  safe: { paddingBottom:50 },
 
   header: {
     flexDirection: "row",

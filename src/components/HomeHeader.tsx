@@ -9,7 +9,7 @@ import {
   useColorScheme,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { useNavigation } from "@react-navigation/native";
+import { navigationRef } from "@/navigation/navigationRef";
 
 type HomeHeaderProps = {
   showLocationBar?: boolean;
@@ -34,7 +34,6 @@ export default function HomeHeader({
   searchPlaceholder = "Search",
   showSearch = true,
 }: HomeHeaderProps) {
-  const navigation = useNavigation<any>();
   const scheme = useColorScheme();
   const isDark = scheme === "dark";
 
@@ -80,9 +79,7 @@ export default function HomeHeader({
 
             <TouchableOpacity
               onPress={() =>
-                navigation.navigate("AccountTab", {
-                  screen: "Profile",
-                })
+                navigationRef.navigate("Profile")
               }
             >
               <Image

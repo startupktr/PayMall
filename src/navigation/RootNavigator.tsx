@@ -4,7 +4,6 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useTheme } from '@/contexts/ThemeContext';
 
 import { RootStackParamList } from '@/types/index';
-
 import { SplashScreen } from '@/screens/SplashScreen';
 import { OnboardingScreen } from '@/screens/OnboardingScreen';
 import ProductDetailsScreen from "@/screens/Scan/ProductDetailsScreen";
@@ -12,6 +11,7 @@ import { navigationRef } from '@/navigation/navigationRef';
 
 import MainNavigator from '@/navigation/MainNavigator';
 import AuthStack from "./AuthStack";
+import ProfileScreen from '@/screens/Account/ProfileScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -55,19 +55,41 @@ export const RootNavigator: React.FC = () => {
         initialRouteName="Splash"
         screenOptions={{
           headerShown: false,
-          animation: 'slide_from_right',
+          animation: "slide_from_right",
         }}
       >
+        {/* Boot Flow */}
         <Stack.Screen name="Splash" component={SplashScreen} />
         <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+
+        {/* Main App */}
         <Stack.Screen name="Main" component={MainNavigator} />
 
+        {/* Auth Modal Overlay */}
         <Stack.Screen
           name="Auth"
           component={AuthStack}
-          options={{ presentation: "modal" }} // login overlays app
+          options={{
+            presentation: "modal",
+            gestureEnabled: false,
+          }}
         />
-        <Stack.Screen name="ProductDetails" component={ProductDetailsScreen} />
+
+        {/* Global Product */}
+        <Stack.Screen
+          name="ProductDetails"
+          component={ProductDetailsScreen}
+        />
+
+        {/* 🔥 Global Profile */}
+        <Stack.Screen
+          name="Profile"
+          component={ProfileScreen}
+          options={{
+            presentation: "modal",
+            headerShown: false,
+          }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );
